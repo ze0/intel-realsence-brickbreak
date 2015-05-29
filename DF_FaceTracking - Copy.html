@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Intel(R) RealSense(TM) SDK Web Sample</title>
+
+    <script type="text/javascript" src="js\jquery-1.11.0.min.js"></script>
+    <script type="text/javascript" src="js\promise-1.0.0.min.js"></script>
+    <script type="text/javascript" src="js\realsense.js"></script>
+    <script type="text/javascript" src="js\realsenseinfo.js"></script>
+    <script type="text/javascript">
+        $(document).ready(function () {
+            var sense;
+            var cmgr; 
+            var imageSize;
+            var faceConfiguration;
+
+            // check platform compatibility
+            RealSenseInfo(['face3d'], function (info) {
+                if (info.IsReady == true) {
+                    $('#info').append('<b>Platform supports Intel(R) RealSense(TM) SDK feature</b>');
+                    status('OK');
+                    document.getElementById("Start").disabled = false;
+                } else {
+                    status('Platform not supported: ' + info.responseText);
+                    if (info.IsPlatformSupported != true) {
+                        $('#info').append('<b>Intel® RealSense™ 3D camera not found</b>');
+                    } else if (info.IsBrowserSupported != true) {
+                        $('#info').append('<b>Please update your browser to latest version</b>');
+                    } else {
+                        $('#info').append('<b>Please download and install the following update(s) before running sample: </b>');
+                        for (i = 0; i < info.Updates.length; i++) {
+                            $('#info').append('<a href="' + info.Updates[i].url + '">' + info.Updates[i].href + '</a><br>');
+                        }
+                    }
+                }
+            })
+
+            $('#Start').click(function () {
+                document.getElementById("Start").disabled = true;
+                PXCMSenseManager_CreateInstance().then(function (result) {
+                    sense = result;
+                    return sense.EnableFace(onFaceData);
+                }).then(function (result) {
+                    return result.CreateActiveConfiguration();
+                }).then(function (result) {
+                    faceConfiguration = result;
+                    faceConfiguration.configs.detection.isEnabled = false;
+                    faceConfiguration.configs.landmarks.isEnabled = true;
+                    faceConfiguration.configs.pose.isEnabled = false;
+                    faceConfiguration.configs.expressionProperties.isEnabled = false;
+                    var mode = 0 //Number(selects.options[selects.selectedIndex].value);
+                    return faceConfiguration.SetTrackingMode(mode);
+                }).then(function (result) {
+                    return faceConfiguration.ApplyChanges();
+                }).then(function (result) {
+                    status('Init started');
+                    return sense.Init(null, onStatus);
+                }).then(function (result) {
+                    return sense.QueryCaptureManager();
+                }).then(function (capturemgr) {
+                    cmgr = capturemgr;
+                    return capturemgr.QueryImageSize(pxcmConst.PXCMCapture.STREAM_TYPE_COLOR);
+                }).then(function (result) {
+                    imageSize = result.size;
+                    return cmgr.QueryCapture();
+                }).then(function (capture) {
+                    return capture.QueryDeviceInfo();
+                }).then(function (dinfo) {
+                    var info = dinfo;
+                    if (dinfo.model == pxcmConst.PXCMCapture.DEVICE_MODEL_F200)
+                        console.log('Modele F200 detected')//document.getElementById("landmarks").checked = true;
+                    return sense.StreamFrames();
+                }).then(function (result) {
+                    status('Streaming ' + imageSize.width + 'x' + imageSize.height);
+                    document.getElementById("Stop").disabled = false;   
+                }).catch(function (error) {
+                    status('Init failed: ' + JSON.stringify(error));
+                    document.getElementById("Start").disabled = false;
+                });
+            });
+
+            function clear() {
+                $('#pose_status').text('');
+                $('#expressions_status').text('');
+                document.getElementById("Start").disabled = false;
+                var canvas = document.getElementById('myCanvas');
+                var context = canvas.getContext('2d');
+                context.clearRect(0, 0, canvas.width, canvas.height);
+            }
+
+            $('#Stop').click(function () {
+                document.getElementById("Stop").disabled = true;
+                sense.Close().then(function (result) {
+                    status('Stopped');
+                    clear();
+                });
+            });
+
+            function onFaceData(mid, module, data) {
+                var canvas = document.getElementById('myCanvas');
+                var context = canvas.getContext('2d');
+
+                canvas.width = imageSize.width;
+                canvas.height = imageSize.height;
+
+                if (data.faces == 'undefined') return;
+                for (f = 0; f < data.faces.length; f++) {
+                    var face = data.faces[f];
+                    if (face.detection != null) {
+                        if (face.detection.faceBoundingRect !== 'undefined') {
+                            var rectangle = face.detection.faceBoundingRect;
+                            context.beginPath();
+                            context.lineWidth = 4;
+                            context.strokeStyle = 'green';
+                            context.rect(rectangle.x, rectangle.y, rectangle.w, rectangle.h);
+                            context.stroke();
+                        }
+                    }
+                    if (face.landmarks.landmarksPoints !== 'undefined') {
+                        for (var i = 0; i < face.landmarks.landmarksPoints.length; i++) {
+                            point = face.landmarks.landmarksPoints[i];
+                            if (point != null) {
+                                l10 = face.landmarks.landmarksPoints[10]['image']
+                                l14 = face.landmarks.landmarksPoints[14]['image']
+                                l18 = face.landmarks.landmarksPoints[18]['image']
+                                l22 = face.landmarks.landmarksPoints[22]['image']
+                                l76 = face.landmarks.landmarksPoints[76]['image']
+                                l77 = face.landmarks.landmarksPoints[77]['image']
+                                $('#coord').text(JSON.stringify(l10));
+                                console.log(face.landmarks.landmarksPoints[i])
+                                context.beginPath();
+                                context.fillText(i,point.image.x, point.image.y)
+                                context.fillText(point.image.x+' '+point.image.y,point.image.x, point.image.y+10)
+                                context.arc(point.image.x, point.image.y, 2, 0, 2 * Math.PI);
+                                context.lineWidth = 2;
+                                context.strokeStyle = 'red';
+                                context.stroke();
+                            }
+                        }
+                    }
+                    if (face.pose !== 'undefined' && face.pose != null) {
+                        $('#landmarks').text('landmarks: ' + JSON.stringify(face.pose));
+                    } else {
+                        $('#pose_status').text('');
+                    }
+                    if (face.expressions !== 'undefined' && face.expressions != null) {
+                        $('#expressions_status').text('Expressions: ' + JSON.stringify(face.expressions));
+                    } else {
+                        $('#expressions_status').text('');
+                    }
+                }
+            }
+
+            function onStatus(data) {
+                if (data.sts < 0) {
+                    status('Error ' + data.sts + ' on module ' + data.mid);
+                    clear();
+                }
+            }
+
+            function status(msg) {
+                $('#status').text(msg);
+            }
+        });
+    </script>
+</head>
+
+<body>
+    <div id="wrapper">
+        <div id="container">
+
+            <h1>Intel(R) RealSense(TM) SDK Face Tracking Web Sample</h1>
+            <div id="info"></div>
+            
+            <button id="Start">Start</button>
+            <button id="Stop" disabled="disabled">Stop</button>
+            <br>
+            <br>
+
+            <canvas id="myCanvas" style="border:1px solid #000000;"></canvas>
+
+            <div id="pose_status"></div>
+            <div id="coord">lolilol</div>
+            <div id="expressions_status"></div>
+            <br>
+            Status:<div id="status"></div>
+        </div>
+    </div>
+</body>
+</html>

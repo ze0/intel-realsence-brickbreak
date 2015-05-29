@@ -1,0 +1,242 @@
+<!DOCTYPE HTML>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <link href="styles.css" rel="stylesheet">
+    <title>INTEL RealSense #SPB2015 - RealBreaker</title>
+	
+    <script type="text/javascript" src="js\jquery-1.11.0.min.js"></script>
+    <script type="text/javascript" src="js\promise-1.0.0.min.js"></script>
+    <script type="text/javascript" src="js\realsense.js"></script>
+    <script type="text/javascript" src="js\realsenseinfo.js"></script>
+    <script type="text/javascript">
+        $(document).ready(function () {
+            var sense;
+            var cmgr; 
+            var imageSize;
+            var faceConfiguration;
+            var stat;
+
+            var b1st = true;
+            var b2st = true;
+            var b3st = true;
+
+            var cLeft;
+            var cMiddle;
+            var cRight;
+
+            destroyedBricksCount = 0
+            // check platform compatibility
+            RealSenseInfo(['face3d'], function (info) {
+                if (info.IsReady == true) {
+                    /*$('#info').append('<b>Platform supports Intel(R) RealSense(TM) SDK feature</b>');*/
+                    status('OK');
+                    document.getElementById("start").disabled = false;
+                } else {
+                    status('Platform not supported: ' + info.responseText);
+                    if (info.IsPlatformSupported != true) {
+                        $('#info').append('<b>Intel® RealSense™ 3D camera not found</b>');
+                    } else if (info.IsBrowserSupported != true) {
+                        $('#info').append('<b>Please update your browser to latest version</b>');
+                    } else {
+                        $('#info').append('<b>Please download and install the following update(s) before running sample: </b>');
+                        for (i = 0; i < info.Updates.length; i++) {
+                            $('#info').append('<a href="' + info.Updates[i].url + '">' + info.Updates[i].href + '</a><br>');
+                        }
+                    }
+                }
+            })
+
+            $('#start').click(function () {
+                document.getElementById("start").disabled = true;
+                PXCMSenseManager_CreateInstance().then(function (result) {
+                    sense = result;
+                    return sense.EnableFace(onFaceData);
+                }).then(function (result) {
+                    return result.CreateActiveConfiguration();
+                }).then(function (result) {
+                    faceConfiguration = result;
+                    faceConfiguration.configs.detection.isEnabled = false;
+                    faceConfiguration.configs.landmarks.isEnabled = true;
+                    faceConfiguration.configs.pose.isEnabled = false;
+                    faceConfiguration.configs.expressionProperties.isEnabled = false;
+                    var mode = 0 //Number(selects.options[selects.selectedIndex].value);
+                    return faceConfiguration.SetTrackingMode(mode);
+                }).then(function (result) {
+                    return faceConfiguration.ApplyChanges();
+                }).then(function (result) {
+                    status('Init started');
+                    return sense.Init(null, onStatus);
+                }).then(function (result) {
+                    return sense.QueryCaptureManager();
+                }).then(function (capturemgr) {
+                    cmgr = capturemgr;
+                    return capturemgr.QueryImageSize(pxcmConst.PXCMCapture.STREAM_TYPE_COLOR);
+                }).then(function (result) {
+                    imageSize = result.size;
+                    return cmgr.QueryCapture();
+                }).then(function (capture) {
+                    return capture.QueryDeviceInfo();
+                }).then(function (dinfo) {
+                    var info = dinfo;
+                    if (dinfo.model == pxcmConst.PXCMCapture.DEVICE_MODEL_F200)
+                        console.log('Modele F200 detected')//document.getElementById("landmarks").checked = true;
+                    return sense.StreamFrames();
+                }).then(function (result) {
+                    status('Streaming ' + imageSize.width + 'x' + imageSize.height);
+                    document.getElementById("Stop").disabled = false;   
+                }).catch(function (error) {
+                    status('Init failed: ' + JSON.stringify(error));
+                    document.getElementById("start").disabled = false;
+                });
+            });
+
+            function clear() {
+                $('#pose_status').text('');
+                $('#expressions_status').text('');
+                document.getElementById("start").disabled = false;
+            }
+
+            $('#stop').click(function () {
+                document.getElementById("stop").disabled = true;
+                sense.Close().then(function (result) {
+                    status('Stopped');
+                    clear();
+                });
+            });
+
+            $('#b1').click(function () {
+                if (b2st == false)
+                    document.getElementById('b1').style = "display: none;";
+                    cLeft = posEyeX;
+
+            })
+
+            $('#b2').click(function () {
+                if (stat == 'OK') {
+                    document.getElementById('b2').style = "display: none;";
+                    b2st = false;
+                    cMiddle = [["l10", l10], ["l14", l14], ["l16", l16], ["l76", l76], ["l18", l18], ["l24", l24], ["l22", l22], ["l77", l77]]
+                    console.log(cMiddle)
+
+                }
+            })
+
+            $('#b3').click(function () {
+                if (b2st == false)
+                    document.getElementById('b3').style = "display: none;";
+                    cRight = posEyeX
+            })
+
+
+
+            function onFaceData(mid, module, data) {
+                
+                if (data.faces == 'undefined') return;
+                for (f = 0; f < data.faces.length; f++) {
+                    var face = data.faces[f];
+                    if (face.landmarks.landmarksPoints !== 'undefined') {
+                
+                        l10 = face.landmarks.landmarksPoints[10]['image']
+                        l14 = face.landmarks.landmarksPoints[14]['image']
+                        l16 = face.landmarks.landmarksPoints[14]['image']
+                        
+                        l18 = face.landmarks.landmarksPoints[18]['image']
+                        l22 = face.landmarks.landmarksPoints[22]['image']
+                        l24 = face.landmarks.landmarksPoints[22]['image']
+                        
+                        l76 = face.landmarks.landmarksPoints[76]['image']
+                        l77 = face.landmarks.landmarksPoints[77]['image']
+                        
+                        
+                        p1 = (l18.x - l22.x)*-1;
+
+                        p2 = (((l77.x - l22.x)*-1)*100)/p1;
+
+                        $('#coordx1').text(p1)
+
+                        //p2 offset 38 70
+
+                        p2o = (p2 - 41)*100/32;
+                        
+
+
+                        //$('#title').text(p2o)
+                        localx = p2o * maxX / 100;
+
+                        previousX = posx;
+
+                        //posx = localx
+
+                        //padX = localx
+                        //padSpeed += (posx - previousX) * 0.2;
+                        posEyeX = localx;
+
+
+
+                        $('#title').text('plip');
+
+
+                    }
+                }
+            }
+
+            function onStatus(data) {
+                if (data.sts < 0) {
+                    status('Error ' + data.sts + ' on module ' + data.mid);
+                    clear();
+                }
+            }
+
+            function status(msg) {
+                stat = msg
+                $('#status').text(msg);
+            }
+        });
+    </script>
+</head>
+<body>
+    <div class="grid">
+        <header>
+            <div><h1 id="title">
+                RealBreaker</h1>
+            <ul>
+                <li><a href="#gameZone" id="start">Start Real Sense detection</a></li>
+                <li><a href="#gameZone" id="stop">Stop Real Sense detection</a></li>
+                <li><a href="#gameZone" id="newGame">New game</a></li>
+            </ul></div>
+            <div id="d2">
+                <ul>
+                    <li><a href="#gameZone" id="b1">🍙 look and click</a></li>
+                    <li><a href="#gameZone" id="b2">look 🍙 click</a></li>
+                    <li><a href="#gameZone" id="b3">look and click 🍙</a></li>
+                </ul>
+            </div>
+
+        </header>
+        <div id="gameZone">
+            <canvas id="backgroundCanvas">
+                Your browser doesn't support HTML5. Please install Internet Explorer 9 :
+                <br />
+                <a href="http://windows.microsoft.com/en-US/internet-explorer/products/ie/home?ocid=ie9_bow_Bing&WT.srch=1&mtag=SearBing">
+                    http://windows.microsoft.com/en-US/internet-explorer/products/ie/home?ocid=ie9_bow_Bing&WT.srch=1&mtag=SearBing</a>
+            </canvas>
+            <svg id="svgRoot">
+                <circle cx="100" cy="100" r="10" id="ball" />
+                <rect id="pad" height="15px" width="200px" x="200" y="200" rx="10" ry="20"/>
+            </svg>
+            <div id="stats">
+            </div>
+            <div id="message">Victory!</div>
+        </div>
+        <footer>
+            <ul>
+                <li><a>Intel Hackaton 2015 ! St Peterbourg ! Bonch FTW !</a></li>
+            </ul>
+        </footer>
+    </div>
+    <script type="text/javascript" src="js\mouse.js"></script>
+    <!--<script type="text/javascript" src="background.js"></script>-->
+    <script type="text/javascript" src="js\game.js"></script>
+</body>
+</html>
