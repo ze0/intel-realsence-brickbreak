@@ -6,26 +6,26 @@
 
 	- Head tracking gampley
 
-* Eye Tracking Main principle
+* Eye Tracking Main Idea
 
-	RealSense create Landmark from the face
+	RealSense creates Landmarks from the face
 
-	Creation of a virtual point from the landmarks
+	Creation of virtual point from landmarks
 
 	Calculation of the distance between the virtual point and the eye
 
 	[image from zaven]
 
 
-* Head Tracking Main principle
+* Head Tracking Main Idea
 
-	RealSense calculate Position Angle of the face
+	RealSense calculates Position Angle of the face
 
-	Pitch is the UP-DOWN angle
+	Pitch is the Vertical angle
 
-	Yaw is the LEFT-RIGHT angle
+	Yaw is the Horizental angle
 
-	ROLL is the rotation angle of the face 
+	ROLL is the degree of rotation of the head
 
 	[image https://software.intel.com/sites/default/files/managed/47/0f/HeadOrientation.JPG]
 
@@ -33,9 +33,9 @@
 
 	Javascript SDK
 
-	after initialisation the sdk server send event to "onFaceData"
+	after initialisation of the sdk, server sends events to "onFaceData"
 
-	its send several object
+	it sends several objects
 
 	we use data.faces to get the first detected faces
 
@@ -44,25 +44,25 @@
 
 * About the SDK
 
-	face object data depend of the initalistaion part (refers to the intel documentation)
+	face object data depend on the initialization part (refers to the intel documentation)
 
 	landmarks : face.landmarks.landmarksPoints[XX]
 
-	XX is the number of the landmarks you want to use
+	XX is the number of landmarks you want to use
 
-	it contain X and Y
+	it contains X and Y
 
 	Head tracking angle:
 
 	face.pose.poseAngles
 
-	it contain Pitch Roll Yaw
+	it contains Pitch // Roll // Yaw
 
 * Eye tracking calibration
 
-	caliration of the eye postion in fonction of the screen
+	caliration of the eye postion in function of the screen
 
-	3 point to look
+	3 points to look
 
 	Eye position transform in percentage from the calibration
 
