@@ -57,8 +57,8 @@
                 }).then(function (result) {
                     faceConfiguration = result;
                     faceConfiguration.configs.detection.isEnabled = false;
-                    faceConfiguration.configs.landmarks.isEnabled = true;
-                    faceConfiguration.configs.pose.isEnabled = false;
+                    faceConfiguration.configs.landmarks.isEnabled = false;
+                    faceConfiguration.configs.pose.isEnabled = true;
                     faceConfiguration.configs.expressionProperties.isEnabled = false;
                     var mode = 0 //Number(selects.options[selects.selectedIndex].value);
                     return faceConfiguration.SetTrackingMode(mode);
@@ -108,7 +108,8 @@
             $('#b1').click(function () {
                 if (b2st == false)
                     document.getElementById('b1').style = "display: none;";
-                    cLeft = posEyeX;
+                    offsetLeft = [eye1Mx - l77.x, eye1My - l77.y];
+
 
             })
 
@@ -116,8 +117,7 @@
                 if (stat == 'OK') {
                     document.getElementById('b2').style = "display: none;";
                     b2st = false;
-                    cMiddle = [["l10", l10], ["l14", l14], ["l16", l16], ["l76", l76], ["l18", l18], ["l24", l24], ["l22", l22], ["l77", l77]]
-                    console.log(cMiddle)
+                    offsetMiddle = [eye1Mx - l77.x, eye1My - l77.y]
 
                 }
             })
@@ -125,57 +125,33 @@
             $('#b3').click(function () {
                 if (b2st == false)
                     document.getElementById('b3').style = "display: none;";
-                    cRight = posEyeX
+                    offsetRight = [eye1Mx - l77.x, eye1My - l77.y]
+                    $('#title').text(Math.abs(offsetLeft[0]) + Math.abs(offsetRight[0]));
+
             })
 
 
 
             function onFaceData(mid, module, data) {
                 
-                if (data.faces == 'undefined') return;
+            if (data.faces == 'undefined') return;
                 for (f = 0; f < data.faces.length; f++) {
                     var face = data.faces[f];
-                    if (face.landmarks.landmarksPoints !== 'undefined') {
-                
-                        l10 = face.landmarks.landmarksPoints[10]['image']
-                        l14 = face.landmarks.landmarksPoints[14]['image']
-                        l16 = face.landmarks.landmarksPoints[14]['image']
-                        
-                        l18 = face.landmarks.landmarksPoints[18]['image']
-                        l22 = face.landmarks.landmarksPoints[22]['image']
-                        l24 = face.landmarks.landmarksPoints[22]['image']
-                        
-                        l76 = face.landmarks.landmarksPoints[76]['image']
-                        l77 = face.landmarks.landmarksPoints[77]['image']
-                        
-                        
-                        p1 = (l18.x - l22.x)*-1;
 
-                        p2 = (((l77.x - l22.x)*-1)*100)/p1;
-
-                        $('#coordx1').text(p1)
-
-                        //p2 offset 38 70
-
-                        p2o = (p2 - 41)*100/32;
-                        
+                    if (face.pose !== 'undefined' && face.pose != null) {
+                        $('#title').text(face.pose.poseAngles.yaw)
+                        base = 30;
+                        result = (((face.pose.poseAngles.yaw) * 100 )/ base);
 
 
-                        //$('#title').text(p2o)
-                        localx = p2o * maxX / 100;
+                        padP = (padX+padWidth/2) *100 / maxX
+                        padP-=50
 
-                        previousX = posx;
+                        if (result > padP)
+                            padSpeed += 10
 
-                        //posx = localx
-
-                        //padX = localx
-                        //padSpeed += (posx - previousX) * 0.2;
-                        posEyeX = localx;
-
-
-
-                        $('#title').text('plip');
-
+                        if (result < padP)
+                            padSpeed -= 10
 
                     }
                 }
@@ -205,13 +181,7 @@
                 <li><a href="#gameZone" id="stop">Stop Real Sense detection</a></li>
                 <li><a href="#gameZone" id="newGame">New game</a></li>
             </ul></div>
-            <div id="d2">
-                <ul>
-                    <li><a href="#gameZone" id="b1">🍙 look and click</a></li>
-                    <li><a href="#gameZone" id="b2">look 🍙 click</a></li>
-                    <li><a href="#gameZone" id="b3">look and click 🍙</a></li>
-                </ul>
-            </div>
+            
 
         </header>
         <div id="gameZone">
