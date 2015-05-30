@@ -1,0 +1,85 @@
+
+
+* 2 part
+
+	- Eye Tracking Gameplay
+
+	- Head tracking gampley
+
+* Eye Tracking Main principle
+
+	RealSense create Landmark from the face
+
+	Creation of a virtual point from the landmarks
+
+	Calculation of the distance between the virtual point and the eye
+
+	[image from zaven]
+
+
+* Head Tracking Main principle
+
+	RealSense calculate Position Angle of the face
+
+	Pitch is the UP-DOWN angle
+
+	Yaw is the LEFT-RIGHT angle
+
+	ROLL is the rotation angle of the face 
+
+	[image https://software.intel.com/sites/default/files/managed/47/0f/HeadOrientation.JPG]
+
+* About the SDK
+
+	Javascript SDK
+
+	after initialisation the sdk server send event to "onFaceData"
+
+	its send several object
+
+	we use data.faces to get the first detected faces
+
+	*note that the landmarks work only on the first detected face
+
+
+* About the SDK
+
+	face object data depend of the initalistaion part (refers to the intel documentation)
+
+	landmarks : face.landmarks.landmarksPoints[XX]
+
+	XX is the number of the landmarks you want to use
+
+	it contain X and Y
+
+	Head tracking angle:
+
+	face.pose.poseAngles
+
+	it contain Pitch Roll Yaw
+
+* Eye tracking calibration
+
+	caliration of the eye postion in fonction of the screen
+
+	3 point to look
+
+	Eye position transform in percentage from the calibration
+
+	moving the pad depending of the percentage
+
+* Head Tracking
+
+	arbitrary calibration set to -15 15
+
+	Yaw data is transform in percentage from the arbitrary calibration
+
+	moving the pad depending of the percentage
+
+
+* That's it !
+
+	Demo Time 
+
+
+
